@@ -376,7 +376,7 @@ module.exports.GetItemsByCategory = async (req, res) => {
 async function cart() {
   try {
     // Connect to RabbitMQ and listen on the 'item-request' queue
-    const connection = await amqp.connect('amqps://uwvfhigi:6FkSJbsjpHmoiwz0vq1u54GpG4vwLXN9@vulture.rmq.cloudamqp.com/uwvfhigi', {
+    const connection = await amqp.connect('amqps://spogxdre:xsftHXmfeGSJlWsfCYVAnF1g6AXSlmuI@kebnekaise.lmq.cloudamqp.com/spogxdre', {
       heartbeat: 60
     });
     const channel = await connection.createChannel();
@@ -453,7 +453,7 @@ async function cart() {
 async function handleWishlistRequests() {
   try {
       // Connect to RabbitMQ
-      const connection = await amqp.connect('amqps://uwvfhigi:6FkSJbsjpHmoiwz0vq1u54GpG4vwLXN9@vulture.rmq.cloudamqp.com/uwvfhigi', {
+      const connection = await amqp.connect('amqps://spogxdre:xsftHXmfeGSJlWsfCYVAnF1g6AXSlmuI@kebnekaise.lmq.cloudamqp.com/spogxdre', {
         heartbeat: 60
       });
       const channel = await connection.createChannel();
