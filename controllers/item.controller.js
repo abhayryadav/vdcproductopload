@@ -7,10 +7,6 @@ const { validationResult } = require('express-validator');
 
 
 
-
-
-
-
 module.exports.adminauthentication = async(req, res) => {
   const { securityKey } = req.body;
   const SECURE_KEY = process.env.SECURE_KEY || 'llp';
@@ -59,43 +55,56 @@ module.exports.AdminLogin = async (req, res) => {
 
 // Add Item
 module.exports.AddItem = async (req, res) => {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-  
-      const { productName, description, price, availableQuantity, category } = req.body;
-      
-      
-      console.log("asdf")
-      if (!req.file) {
-        return res.status(400).json({ error: 'Image is required' });
-      }
-      // Correct way to get Cloudinary URL
-      const imageLink = req.file.path;
-      
-      
-      console.log(imageLink)     
-      const newItem = new itemModel({
-        productName,
-        description,
-        price,
-        availableQuantity,
-        imageLink,
-        category,
-      });
-
-
-
-      console.log("--------------")
-      await newItem.save();
-      res.status(201).json({ message: 'Item added successfully', item: newItem });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: 'Failed to add item' });
+  console.log("AddItem called");
+  console.log("req.body:", req.body);
+  console.log("req.files:", req.files);
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
-  };
+
+    const { productName, description, price, availableQuantity, category } = req.body;
+
+    // Validate required fields
+    if (!productName || !description || !price || !availableQuantity || !category) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    // Check if cover image is uploaded
+    if (!req.files || !req.files.image || req.files.image.length === 0) {
+      console.log("No cover image uploaded");
+      return res.status(400).json({ error: 'Cover image is required' });
+    }
+
+    // Get cover image URL
+    const imageLink = req.files.image[0].path;
+
+    // Get additional images URLs (optional)
+    const images = req.files.images && req.files.images.length > 0
+      ? req.files.images.map(file => file.path)
+      : [];
+
+    console.log('imageLink:', imageLink);
+    console.log('images:', images);
+
+    const newItem = new itemModel({
+      productName,
+      description,
+      price: parseFloat(price),
+      availableQuantity: parseInt(availableQuantity),
+      imageLink,
+      images,
+      category,
+    });
+
+    await newItem.save();
+    res.status(201).json({ message: 'Item added successfully', item: newItem });
+  } catch (error) {
+    console.error('Error adding item:', error);
+    res.status(500).json({ error: 'Failed to add item', details: error.message });
+  }
+};
   
 
 // Delete Item
@@ -412,9 +421,17 @@ async function cart() {
       // Create the response payload, merging the item details with cart items
       const cartWithDetails = cartItems.map((cartItem) => {
         const item = items.find(i => i._id.toString() === cartItem.itemId.toString());
+        if (!item) {
+          console.warn(`Item with ID ${cartItem.itemId} not found in database`);
+          return {
+            itemId: cartItem.itemId,
+            quantity: cartItem.quantity,
+            itemDetail: null // Or handle as needed (e.g., skip or return an error object)
+          };
+        }
         return {
           itemId: item._id,
-          quantity: cartItem.quantity, // Use the actual quantity from the cart
+          quantity: cartItem.quantity,
           itemDetail: {
             _id: item._id,
             productName: item.productName,
@@ -521,3 +538,25 @@ async function handleWishlistRequests() {
 cart()
 handleWishlistRequests();
 
+// Get Item By ID
+module.exports.getItemById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Validate ID format
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ error: 'Invalid item ID format' });
+    }
+
+    // Find item by ID
+    const item = await itemModel.findById(id);
+    if (!item) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    res.status(200).json({ message: 'Item retrieved successfully', item });
+  } catch (error) {
+    console.error('Error fetching item by ID:', error);
+    res.status(500).json({ error: 'Failed to fetch item', details: error.message });
+  }
+};
