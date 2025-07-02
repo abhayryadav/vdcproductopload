@@ -132,49 +132,103 @@ module.exports.DeleteItem = async (req, res) => {
 };
 
 // Update Item
-module.exports.UpdateItem = async (req, res) => {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
+// module.exports.UpdateItem = async (req, res) => {
+//     try {
+//       const errors = validationResult(req);
+//       if (!errors.isEmpty()) {
+//         return res.status(400).json({ errors: errors.array() });
+//       }
   
-      var { itemId, productName, description, price, availableQuantity, imageLink, category } = req.body;
-      // console.log("Request Body:", req.body);
-      // console.log("Uploaded File:", req.file);
+//       var { itemId, productName, description, price, availableQuantity, imageLink, category } = req.body;
+//       // console.log("Request Body:", req.body);
+//       // console.log("Uploaded File:", req.file);
 
-      let imageLinknew = imageLink;
+//       let imageLinknew = imageLink;
 
-      // if (!req.file) {
-      //   return res.status(200).json({ error: 'Image is required' });
-      // }
-      if (req.file) {
-        imageLinknew = req.file.path;
-      }
+//       // if (!req.file) {
+//       //   return res.status(200).json({ error: 'Image is required' });
+//       // }
+//       if (req.file) {
+//         imageLinknew = req.file.path;
+//       }
       
-      console.log(imageLinknew,"[][][][][][][]][-------][][][[][][][][]")
-      imageLink = imageLinknew
-      const updatedItem = await itemModel.findByIdAndUpdate(
-        itemId,
-        { productName, description, price, availableQuantity, imageLink, category },
-        { new: true }
-      );
+//       console.log(imageLinknew,"[][][][][][][]][-------][][][[][][][][]")
+//       imageLink = imageLinknew
+//       const updatedItem = await itemModel.findByIdAndUpdate(
+//         itemId,
+//         { productName, description, price, availableQuantity, imageLink, category },
+//         { new: true }
+//       );
   
-      if (!updatedItem) {
-        return res.status(404).json({ error: 'Item not found' });
-      }
+//       if (!updatedItem) {
+//         return res.status(404).json({ error: 'Item not found' });
+//       }
   
-      res.status(200).json({ message: 'Item updated successfully', item: updatedItem });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: 'Failed to update item' });
+//       res.status(200).json({ message: 'Item updated successfully', item: updatedItem });
+//     } catch (error) {
+//       console.error(error);
+//       res.status(500).json({ error: 'Failed to update item' });
+//     }
+//   };
+  
+  
+
+module.exports.UpdateItem = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
-  };
-  
-  
+    console.log("1")
+    const { itemId, productName, description, price, availableQuantity, category } = req.body;
+    let image = req.body.image; // May be a string (existing path) or undefined
+    let images = req.body.images || [];
+    console.log("2")
 
+    // Handle cover image
+    if (req.files && req.files.image && req.files.image.length > 0) {
+      image = req.files.image[0].path; // New file uploaded
+    }
+    console.log("3")
 
+    // Handle additional images
+    if (req.files && req.files.images && req.files.images.length > 0) {
+      images = req.files.images.map(file => file.path);
+    }
+    console.log("4")
 
+    const updateData = {
+      productName,
+      description,
+      price: parseFloat(price) || 0, // Fallback to 0 if price is invalid
+      availableQuantity: parseInt(availableQuantity) || 0,
+      category,
+    };
+    console.log("5")
+
+    // Only update image if provided
+    if (image) updateData.imageLink = image;
+    if (images.length > 0) updateData.images = images;
+    console.log("6")
+
+    const updatedItem = await itemModel.findByIdAndUpdate(
+      itemId,
+      updateData,
+      { new: true }
+    );
+    console.log("7")
+
+    if (!updatedItem) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+    console.log("8")
+
+    res.status(200).json({ message: 'Item updated successfully', item: updatedItem });
+  } catch (error) {
+    console.error('Error updating item:', error);
+    res.status(500).json({ error: 'Failed to update item', details: error.message });
+  }
+};
 
 
   // module.exports.GetAllAvailableItems = async (req, res) => {
