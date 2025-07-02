@@ -35,6 +35,7 @@ const corsOptions = {
             'https://vdcendo.com',
             'https://vdcinternational.vercel.app',
             'https://vdcendo-api-testing-front.vercel.app',
+            'https://localhost:3000', // Add local development URL if needed
             'http://localhost:3000', // Add local development URL if needed
           ];
           if (!origin || allowedOrigins.includes(origin)) {
